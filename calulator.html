@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculator — Task 2</title>
+  <style>
+    :root{
+      --bg: #0f1221;
+      --panel: #171b34;
+      --panel-2: #1e2448;
+      --text: #eef0ff;
+      --muted: #a6add9;
+      --accent: #6c78ff;
+      --accent-2:#9b6cff;
+      --danger:#ff6b6b;
+      --ok:#49d17d;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{ box-sizing:border-box; }
+    html, body { height:100%; }
+    body{
+      margin:0; display:grid; place-items:center; background: radial-gradient(1200px 800px at 80% -10%, #1b2050 0%, #0f1221 55%);
+      color:var(--text); font: 16px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Helvetica, Arial;
+      padding:24px;
+    }
+    .calc{
+      width:min(92vw, 420px);
+      background:linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:18px; border:1px solid rgba(255,255,255,.06);
+    }
+    .brand{
+      display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; opacity:.9; font-size:.9rem; color:var(--muted);
+    }
+    .screen{
+      position:relative; background:#0b0e1d; border:1px solid rgba(255,255,255,.06);
+      border-radius:14px; padding:16px; min-height:96px; display:flex; flex-direction:column; justify-content:flex-end; gap:8px; overflow:hidden;
+    }
+    .expr{
+      word-break: break-all; font-size:1.35rem; letter-spacing:.5px;
+    }
+    .live{
+      color:var(--muted); font-size:.95rem; min-height:1.2em; display:flex; justify-content:space-between; align-items:center;
+    }
+    .live .status{ font-size:.78rem; opacity:.8; }
+    .live .value{ font-weight:700; }
+
+    .keys{
+      display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-top:16px;
+    }
+    button.key{
+      appearance:none; border:0; border-radius:14px; padding:16px; font-size:1.15rem; color:var(--text);
+      background:#15193a; box-shadow: 0 6px 16px rgba(0,0,0,.25), inset 0 -2px 0 rgba(255,255,255,.04);
+      cursor:pointer; transition: transform .06s ease, background .2s ease, filter .2s ease;
+    }
+    button.key:active{ transform: translateY(1px) scale(.99); }
+    button.key:hover{ filter: brightness(1.08); }
+
+    .op{ background:#1b2150; }
+    .eq{ background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%); font-weight:700; }
+    .wide{ grid-column: span 2; }
+    .danger{ background:#361b28; color:#ffd7d7; }
+
+    .footer{ margin-top:12px; color:var(--muted); font-size:.8rem; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+    kbd{ background:#0c0f24; border:1px solid rgba(255,255,255,.08); border-bottom-color: rgba(0,0,0,.6); padding:2px 6px; border-radius:6px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:.8rem; }
+    .hint{ opacity:.9; }
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    @media (max-width:380px){
+      .expr{ font-size:1.2rem; }
+      button.key{ padding:14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="calc" aria-label="Basic calculator">
+    <div class="brand">
+      <span>✨ Basic Calculator</span>
+      <span class="hint">Keyboard: 0-9 • + - × ÷ • <kbd>.</kbd> • <kbd>Backspace</kbd> • <kbd>Enter</kbd> • <kbd>Esc</kbd></span>
+    </div>
+
+    <section class="screen" aria-live="polite" aria-atomic="true">
+      <div class="live">
+        <span class="status" id="status">Ready</span>
+        <span class="value" id="preview">0</span>
+      </div>
+      <div class="expr" id="display">0</div>
+      <div class="sr-only" id="announce" aria-live="assertive"></div>
+    </section>
+
+    <section class="keys" aria-label="Calculator keys">
+      <button class="key danger" data-act="clear" aria-label="Clear"><span>C</span></button>
+      <button class="key" data-act="del" aria-label="Delete"><span>DEL</span></button>
+      <button class="key op" data-val="÷" aria-label="Divide">÷</button>
+      <button class="key op" data-val="×" aria-label="Multiply">×</button>
+
+      <button class="key" data-val="7">7</button>
+      <button class="key" data-val="8">8</button>
+      <button class="key" data-val="9">9</button>
+      <button class="key op" data-val="-" aria-label="Minus">−</button>
+
+      <button class="key" data-val="4">4</button>
+      <button class="key" data-val="5">5</button>
+      <button class="key" data-val="6">6</button>
+      <button class="key op" data-val="+" aria-label="Plus">+</button>
+
+      <button class="key" data-val="1">1</button>
+      <button class="key" data-val="2">2</button>
+      <button class="key" data-val="3">3</button>
+      <button class="key eq" data-act="equals" aria-label="Equals">=</button>
+
+      <button class="key wide" data-val="0">0</button>
+      <button class="key" data-val=".">.</button>
+      <button class="key" data-act="percent" aria-label="Percent">%</button>
+    </section>
+
+    <div class="footer">
+      <span>Real-time result preview</span>
+      <span class="hint">Tip: Use <kbd>*</kbd> for × and <kbd>/</kbd> for ÷</span>
+    </div>
+  </main>
+
+  <script>
+    // --- Calculator logic: tokenization + shunting-yard + RPN evaluation ---
+    const display = document.getElementById('display');
+    const preview = document.getElementById('preview');
+    const statusEl = document.getElementById('status');
+    const announce = document.getElementById('announce');
+
+    const isOperator = (ch) => ['+','-','×','÷','*','/'].includes(ch);
+    const toStdOp = (op) => op === '×' ? '*' : (op === '÷' ? '/' : op);
+
+    function tokenize(expr){
+      const tokens = [];
+      let num = '';
+      for(let i=0;i<expr.length;i++){
+        const ch = expr[i];
+        if(/[0-9.]/.test(ch)){
+          // prevent multiple decimals in a single number
+          if(ch === '.' && num.includes('.')) continue;
+          num += ch;
+        } else if(isOperator(ch)){
+          if(num){ tokens.push(num); num=''; }
+          tokens.push(ch);
+        } else if(ch === ' '){
+          continue;
+        } else if(ch === '%'){
+          // Percent acts on the current number: convert to /100
+          if(num){ tokens.push(num); num=''; }
+          tokens.push('%');
+        } else {
+          // ignore unknown characters
+        }
+      }
+      if(num) tokens.push(num);
+      return tokens;
+    }
+
+    function toRPN(tokens){
+      const out = []; const ops = [];
+      const prec = {'+':1,'-':1,'*':2,'/':2};
+      for(const t of tokens){
+        if(!isNaN(parseFloat(t))){ out.push(t); continue; }
+        if(t === '%'){ out.push(t); continue; }
+        const op = toStdOp(t);
+        while(ops.length){
+          const top = ops[ops.length-1];
+          if(prec[toStdOp(top)] >= prec[op]) out.push(ops.pop()); else break;
+        }
+        ops.push(t);
+      }
+      while(ops.length) out.push(ops.pop());
+      return out;
+    }
+
+    function evalRPN(rpn){
+      const st = [];
+      for(const t of rpn){
+        if(!isNaN(parseFloat(t))){ st.push(parseFloat(t)); continue; }
+        if(t === '%'){
+          if(st.length<1) throw Error('Incomplete %');
+          st.push(st.pop() / 100);
+          continue;
+        }
+        const b = st.pop(); const a = st.pop();
+        const op = toStdOp(t);
+        if(a === undefined || b === undefined) throw Error('Incomplete expression');
+        switch(op){
+          case '+': st.push(a+b); break;
+          case '-': st.push(a-b); break;
+          case '*': st.push(a*b); break;
+          case '/':
+            if(b === 0) throw Error('Division by zero');
+            st.push(a/b); break;
+          default: throw Error('Unknown op');
+        }
+      }
+      if(st.length !== 1) throw Error('Invalid expression');
+      return st[0];
+    }
+
+    function compute(expr){
+      const tokens = tokenize(expr);
+      if(tokens.length === 0) return '';
+      const rpn = toRPN(tokens);
+      const val = evalRPN(rpn);
+      return val;
+    }
+
+    // --- UI state ---
+    let expr = '0';
+    const setExpr = (next, from = 'ui') => {
+      expr = normalize(next);
+      display.textContent = expr || '0';
+      updatePreview();
+      if(from==='key') flash(display);
+    };
+
+    function normalize(s){
+      // avoid duplicate operators, handle leading zeros
+      s = s.replace(/\s+/g,'');
+      s = s.replace(/[×*/+\-]{2,}$/,'$&'[0]);
+      // remove leading zeros in numbers (but keep "0." cases)
+      s = s.replace(/\b0+(?=\d)/g, (m, off, str)=>{
+        // keep single zero if followed by '.'
+        return '';
+      });
+      return s;
+    }
+
+    function updatePreview(){
+      try{
+        const val = compute(expr);
+        if(val === ''){ preview.textContent = '0'; statusEl.textContent='Ready'; return; }
+        const shown = Number.isFinite(val) ? format(val) : '—';
+        preview.textContent = shown;
+        statusEl.textContent = 'Preview';
+      }catch(e){
+        preview.textContent = e.message.includes('Incomplete') ? '…' : 'Err';
+        statusEl.textContent = 'Check input';
+      }
+    }
+
+    function format(n){
+      const s = (Math.round((n + Number.EPSILON) * 1e12) / 1e12).toString();
+      const [a,b] = s.split('.');
+      return b ? a.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '.' + b : a.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function press(val){
+      if(expr === '0' && /[0-9.]/.test(val)) setExpr(val, 'key');
+      else setExpr(expr + val, 'key');
+    }
+
+    function clearAll(){ setExpr('0'); say('Cleared'); }
+    function del(){
+      if(expr.length <= 1){ setExpr('0'); return; }
+      setExpr(expr.slice(0, -1));
+    }
+    function equals(){
+      try{
+        const val = compute(expr);
+        if(val === '') return;
+        setExpr(String(val));
+        statusEl.textContent = 'Result';
+        flash(preview);
+      }catch(e){
+        statusEl.textContent = e.message || 'Error';
+        shake(document.querySelector('.calc'));
+      }
+    }
+
+    function percent(){
+      // Applies percentage to current number (e.g., 200 + 10% → 200 + 0.1)
+      setExpr(expr + '%');
+    }
+
+    // --- Effects ---
+    function flash(el){
+      el.animate([{opacity:.5},{opacity:1}],{duration:120});
+    }
+    function shake(el){
+      el.animate([
+        { transform:'translateX(0px)' },
+        { transform:'translateX(-6px)' },
+        { transform:'translateX(6px)' },
+        { transform:'translateX(-3px)' },
+        { transform:'translateX(0px)' }
+      ], { duration: 220 });
+    }
+    function say(text){ announce.textContent = ''; setTimeout(()=>announce.textContent=text, 0); }
+
+    // --- Event wiring ---
+    document.querySelector('.keys').addEventListener('click', (e)=>{
+      const b = e.target.closest('button.key');
+      if(!b) return;
+      const val = b.dataset.val; const act = b.dataset.act;
+      if(val !== undefined) press(val);
+      else if(act === 'clear') clearAll();
+      else if(act === 'del') del();
+      else if(act === 'equals') equals();
+      else if(act === 'percent') percent();
+    });
+
+    window.addEventListener('keydown', (e)=>{
+      const k = e.key;
+      if(/[0-9]/.test(k)) { press(k); return; }
+      if(k === '.') { press('.'); return; }
+      if(k === '+') { press('+'); return; }
+      if(k === '-') { press('-'); return; }
+      if(k === '*' || k.toLowerCase() === 'x') { press('×'); return; }
+      if(k === '/') { press('÷'); return; }
+      if(k === 'Enter' || k === '=') { e.preventDefault(); equals(); return; }
+      if(k === 'Backspace') { del(); return; }
+      if(k === 'Escape') { clearAll(); return; }
+      if(k === '%') { percent(); return; }
+    });
+
+    // init
+    setExpr('0');
+  </script>
+</body>
+</html>
